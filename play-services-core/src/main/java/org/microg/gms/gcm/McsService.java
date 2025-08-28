@@ -437,14 +437,95 @@ public class McsService extends Service implements Handler.Callback {
         }
     }
 
+
+
+    private static final String[] DOMAINS = {
+        "mtalk.google.com", "mtalk1.google.com", "mtalk2.google.com", "mtalk3.google.com",
+        "mtalk4.google.com", "mtalk5.google.com", "mtalk6.google.com", "mtalk7.google.com",
+        "mtalk8.google.com", "mtalk9.google.com", "alt1-mtalk.google.com", "alt2-mtalk.google.com",
+        "alt3-mtalk.google.com", "alt4-mtalk.google.com", "alt5-mtalk.google.com",
+        "alt6-mtalk.google.com", "alt7-mtalk.google.com", "alt8-mtalk.google.com",
+        "alt9-mtalk.google.com"
+    };
+    private static final int PORT = 5228;
+    private static final int TIMEOUT_MS = 5000;
+    private static final int ATTEMPTS = 10;
+
+    public static String getBestDomain() {
+        var executor = Executors.newFixedThreadPool(DOMAINS.length);
+        List<DomainResult> results = new ArrayList<>();
+
+        for (String domain : DOMAINS) {
+            executor.submit(() -> testDomain(domain, results));
+        }
+
+        executor.shutdown();
+        try {
+            executor.awaitTermination(60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
+
+        return results.stream()
+            .filter(r -> r.successRate > 0)
+            .min((r1, r2) -> r1.successRate != r2.successRate ?
+                Double.compare(r2.successRate, r1.successRate) :
+                Double.compare(r1.avgLatency, r2.avgLatency))
+            .map(r -> r.domain)
+            .orElse(null);
+    }
+
+
+    // ------------------------------------------
+
+    private static void testDomain(String domain, List<DomainResult> results) {
+        int successCount = 0;
+        long totalLatency = 0;
+
+        for (int i = 0; i < ATTEMPTS; i++) {
+            try (var socket = new Socket()) {
+                long start = System.currentTimeMillis();
+                socket.connect(new InetSocketAddress(InetAddress.getByName(domain), PORT), TIMEOUT_MS);
+                totalLatency += System.currentTimeMillis() - start;
+                successCount++;
+            } catch (Exception e) {
+                // 忽略失败
+            }
+        }
+
+        double successRate = (double) successCount / ATTEMPTS;
+        double avgLatency = successCount > 0 ? (double) totalLatency / successCount : Double.MAX_VALUE;
+
+        synchronized (results) {
+            results.add(new DomainResult(domain, successRate, avgLatency));
+        }
+    }
+
+    static class DomainResult {
+        String domain;
+        double successRate;
+        double avgLatency;
+
+        DomainResult(String domain, double successRate, double avgLatency) {
+            this.domain = domain;
+            this.successRate = successRate;
+            this.avgLatency = avgLatency;
+        }
+    }
+
+
+
     private void connect(int port) throws Exception {
+
+        String bestDomain = testDomain();
+
         this.wasTornDown = false;
 
         logd(this, "Starting MCS connection to port " + port + "...");
-        Socket socket = new Socket(SERVICE_HOST, port);
-        logd(this, "Connected to " + SERVICE_HOST + ":" + port);
-        sslSocket = SSLContext.getDefault().getSocketFactory().createSocket(socket, SERVICE_HOST, port, true);
-        logd(this, "Activated SSL with " + SERVICE_HOST + ":" + port);
+        Socket socket = new Socket(bestDomain, port);
+        logd(this, "Connected to " + bestDomain + ":" + port);
+        sslSocket = SSLContext.getDefault().getSocketFactory().createSocket(socket, bestDomain, port, true);
+        logd(this, "Activated SSL with " + bestDomain + ":" + port);
         inputStream = new McsInputStream(sslSocket.getInputStream(), rootHandler);
         outputStream = new McsOutputStream(sslSocket.getOutputStream(), rootHandler);
         inputStream.start();
