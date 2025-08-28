@@ -8,7 +8,7 @@ apply plugin: 'kotlin-android'
 
 configurations {
     // mapboxRuntimeOnly
-    vtmRuntimeOnly
+    // vtmRuntimeOnly
     // if (hasModule("hms", true)) hmsRuntimeOnly
     defaultRuntimeOnly
 }
@@ -69,7 +69,7 @@ dependencies {
     implementation project(':play-services-fitness')
 
     // mapboxRuntimeOnly project(':play-services-maps-core-mapbox')
-    vtmRuntimeOnly project(':play-services-maps-core-vtm')
+    // vtmRuntimeOnly project(':play-services-maps-core-vtm')
     defaultRuntimeOnly project(':play-services-location-core-provider')
 
     if (hasModule("nearby", true)) runtimeOnly project(':play-services-nearby-core-package')
@@ -191,9 +191,9 @@ android {
         // "mapbox" {
         //     dimension 'maps'
         // }
-        "vtm" {
-            dimension 'maps'
-        }
+        // "vtm" {
+        //     dimension 'maps'
+        // }
     }
 
     compileOptions {

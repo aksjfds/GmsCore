@@ -46,8 +46,8 @@ jobs:
           done
 
       - name: "Execute Gradle assemble"
-        # run: "./gradlew assembleRelease"
-        run: "./gradlew assembleDebug"
+        run: "./gradlew assembleRelease"
+        # run: "./gradlew assembleDebug"
 
       - name: "ls"
         run: "ls -R play-services-core/build/outputs/apk"
