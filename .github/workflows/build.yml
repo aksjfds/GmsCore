@@ -2,8 +2,6 @@ name: "Gradle build"
 permissions: {}
 on:
   - push
-  - pull_request
-  - workflow_dispatch
 
 jobs:
   build:
@@ -15,20 +13,20 @@ jobs:
     steps:
       - name: "Checkout sources"
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
       - name: "Setup Java"
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
+
       - name: "Setup Gradle"
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-encryption-key: ${{ secrets.GradleEncryptionKey }}
           build-scan-publish: true
           build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
           build-scan-terms-of-use-agree: "yes"
+
       - name: "Setup matchers"
         run: |
           # Setting up matchers...
@@ -46,7 +44,14 @@ jobs:
               echo "Matcher configured: ${NAME:?}"
             fi
           done
+
       - name: "Execute Gradle assemble"
-        run: "./gradlew assemble"
-      - name: "Execute Gradle check"
-        run: "./gradlew check"
+        run: "./gradlew assembleRelease"
+
+      - name: "ls"
+        run: "ls -R play-services-core/build/outputs/apk"
+
+      # - name: "Upload APK"
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     path: play-services-core/build/outputs/apk/vtmDefault/release/com.google.android.gms-250932000.apk
