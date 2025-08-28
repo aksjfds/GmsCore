@@ -439,7 +439,11 @@ public class McsService extends Service implements Handler.Callback {
 
 
 
-    private static final String[] DOMAINS = {
+    // ------------------------------------------
+
+
+
+    public static final String[] DOMAINS = {
         "mtalk.google.com", "mtalk1.google.com", "mtalk2.google.com", "mtalk3.google.com",
         "mtalk4.google.com", "mtalk5.google.com", "mtalk6.google.com", "mtalk7.google.com",
         "mtalk8.google.com", "mtalk9.google.com", "alt1-mtalk.google.com", "alt2-mtalk.google.com",
@@ -447,9 +451,44 @@ public class McsService extends Service implements Handler.Callback {
         "alt6-mtalk.google.com", "alt7-mtalk.google.com", "alt8-mtalk.google.com",
         "alt9-mtalk.google.com"
     };
-    private static final int PORT = 5228;
-    private static final int TIMEOUT_MS = 5000;
-    private static final int ATTEMPTS = 10;
+    public static final int PORT = 5228;
+    public static final int TIMEOUT_MS = 5000;
+    public static final int ATTEMPTS = 10;
+
+    public static class DomainResult {
+        String domain;
+        double successRate;
+        double avgLatency;
+
+        DomainResult(String domain, double successRate, double avgLatency) {
+            this.domain = domain;
+            this.successRate = successRate;
+            this.avgLatency = avgLatency;
+        }
+    }
+
+    public static void testDomain(String domain, List<DomainResult> results) {
+        int successCount = 0;
+        long totalLatency = 0;
+
+        for (int i = 0; i < ATTEMPTS; i++) {
+            try (var socket = new Socket()) {
+                long start = System.currentTimeMillis();
+                socket.connect(new InetSocketAddress(InetAddress.getByName(domain), PORT), TIMEOUT_MS);
+                totalLatency += System.currentTimeMillis() - start;
+                successCount++;
+            } catch (Exception e) {
+                // 忽略失败
+            }
+        }
+
+        double successRate = (double) successCount / ATTEMPTS;
+        double avgLatency = successCount > 0 ? (double) totalLatency / successCount : Double.MAX_VALUE;
+
+        synchronized (results) {
+            results.add(new DomainResult(domain, successRate, avgLatency));
+        }
+    }
 
     public static String getBestDomain() {
         var executor = Executors.newFixedThreadPool(DOMAINS.length);
@@ -475,49 +514,15 @@ public class McsService extends Service implements Handler.Callback {
             .orElse(null);
     }
 
+    
 
     // ------------------------------------------
-
-    private static void testDomain(String domain, List<DomainResult> results) {
-        int successCount = 0;
-        long totalLatency = 0;
-
-        for (int i = 0; i < ATTEMPTS; i++) {
-            try (var socket = new Socket()) {
-                long start = System.currentTimeMillis();
-                socket.connect(new InetSocketAddress(InetAddress.getByName(domain), PORT), TIMEOUT_MS);
-                totalLatency += System.currentTimeMillis() - start;
-                successCount++;
-            } catch (Exception e) {
-                // 忽略失败
-            }
-        }
-
-        double successRate = (double) successCount / ATTEMPTS;
-        double avgLatency = successCount > 0 ? (double) totalLatency / successCount : Double.MAX_VALUE;
-
-        synchronized (results) {
-            results.add(new DomainResult(domain, successRate, avgLatency));
-        }
-    }
-
-    static class DomainResult {
-        String domain;
-        double successRate;
-        double avgLatency;
-
-        DomainResult(String domain, double successRate, double avgLatency) {
-            this.domain = domain;
-            this.successRate = successRate;
-            this.avgLatency = avgLatency;
-        }
-    }
 
 
 
     private void connect(int port) throws Exception {
 
-        String bestDomain = testDomain();
+        String bestDomain = getBestDomain();
 
         this.wasTornDown = false;
 
