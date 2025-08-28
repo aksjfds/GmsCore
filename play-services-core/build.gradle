@@ -7,9 +7,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 configurations {
-    mapboxRuntimeOnly
+    // mapboxRuntimeOnly
     vtmRuntimeOnly
-    if (hasModule("hms", true)) hmsRuntimeOnly
+    // if (hasModule("hms", true)) hmsRuntimeOnly
     defaultRuntimeOnly
 }
 
@@ -68,12 +68,12 @@ dependencies {
     implementation project(':play-services-tasks-ktx')
     implementation project(':play-services-fitness')
 
-    mapboxRuntimeOnly project(':play-services-maps-core-mapbox')
+    // mapboxRuntimeOnly project(':play-services-maps-core-mapbox')
     vtmRuntimeOnly project(':play-services-maps-core-vtm')
     defaultRuntimeOnly project(':play-services-location-core-provider')
 
     if (hasModule("nearby", true)) runtimeOnly project(':play-services-nearby-core-package')
-    if (hasModule("hms", false)) hmsRuntimeOnly project(':play-services-maps-core-hms')
+    // if (hasModule("hms", false)) hmsRuntimeOnly project(':play-services-maps-core-hms')
 
     // AndroidX UI
     implementation "androidx.multidex:multidex:$multidexVersion"
@@ -136,7 +136,8 @@ android {
         buildConfigField "String", "RECAPTCHA_ENTERPRISE_API_KEY", "\"${localProperties.get("recaptchaEnterpreise.apiKey", "")}\""
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            // abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            abiFilters "arm64-v8a"
         }
     }
 
