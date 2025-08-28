@@ -52,7 +52,7 @@ jobs:
       - name: "ls"
         run: "ls -R play-services-core/build/outputs/apk"
 
-      # - name: "Upload APK"
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     path: play-services-core/build/outputs/apk/vtmDefault/release/com.google.android.gms-250932000.apk
+      - name: "Upload APK"
+        uses: actions/upload-artifact@v4
+        with:
+          path: play-services-core/build/outputs/apk/vtmDefault/release/com.google.android.gms-250932000.apk
