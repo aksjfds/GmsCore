@@ -22,6 +22,7 @@ package org.microg.gms.gcm;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 // ----
@@ -483,7 +484,7 @@ public class McsService extends Service implements Handler.Callback {
         long totalLatency = 0;
 
         for (int i = 0; i < ATTEMPTS; i++) {
-            try (var socket = new Socket()) {
+            try (Socket socket = new Socket()) {
                 long start = System.currentTimeMillis();
                 socket.connect(new InetSocketAddress(InetAddress.getByName(domain), PORT), TIMEOUT_MS);
                 totalLatency += System.currentTimeMillis() - start;
@@ -502,7 +503,7 @@ public class McsService extends Service implements Handler.Callback {
     }
 
     public static String getBestDomain() {
-        var executor = Executors.newFixedThreadPool(DOMAINS.length);
+        ExecutorService executor = Executors.newFixedThreadPool(DOMAINS.length);
         List<DomainResult> results = new ArrayList<>();
 
         for (String domain : DOMAINS) {
